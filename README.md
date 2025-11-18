@@ -31,3 +31,49 @@ Layout widgets like Padding, SingleChildScrollView, and ListView are crucial for
 
 ### Q4: How do you set the color theme so that your Football Shop has a visual identity that is consistent with the shop brand?
 Setting a consistent color theme is essential for creating a strong brand identity. In Flutter, this can be done by defining a custom theme inside the MaterialApp widget using the theme property. The Football Shop app applies a color palette that reflects the brand — for instance, using shades of blue and red inspired by FC Barcelona’s iconic colors. This color scheme is applied throughout the app, including the AppBar, buttons, icons, and backgrounds. Maintaining consistent colors not only strengthens brand recognition but also enhances the overall visual harmony of the application.
+
+-----------------------------------------------------------------------------------------------------------------------
+
+# Assignment 3
+1. Why we need a Dart model when fetching/sending JSON data
+
+Creating a Dart model provides strong typing, null safety, and maintainability when working with JSON. If we directly map JSON as Map<String, dynamic>, there is no guarantee that the received data contains the correct types—an integer might become a string, a missing field might cause runtime errors, and null values may appear unexpectedly. With a dedicated Dart model, each field has a defined type, constructors can enforce required data, and errors are caught at compile time instead of crashing the app at runtime. Models also make the code cleaner and more maintainable because all JSON parsing and formatting logic is centralized in one place. Without models, the code becomes messy, repetitive, error-prone, and harder to understand as the project grows.
+
+2. Purpose of the http and CookieRequest packages
+
+The http package is a general-purpose networking library that allows sending HTTP requests such as GET, POST, PUT, and DELETE. It is stateless—meaning every request is independent and does not automatically store cookies or authentication data.
+On the other hand, CookieRequest (from pbp_django_auth) is specifically designed for communicating with a Django backend using session-based authentication. It stores cookies automatically, keeps the login session alive, and ensures that authenticated requests (e.g., fetching user-specific data) include the correct session cookie.
+In short: http handles generic API requests, while CookieRequest handles authenticated, session-based communication with Django.
+
+3. Why the CookieRequest instance must be shared globally
+
+A single shared CookieRequest instance ensures that the authentication state is consistent across the whole Flutter app. If each widget created its own instance, the session cookie would not be shared — one screen might think the user is logged in while another thinks the user is logged out. By using a global provider (as required in the assignment), all pages use the same stored cookies. This allows the login session to persist, lets the user stay logged in while navigating between pages, and ensures that protected endpoints on Django receive the correct authentication cookie.
+
+4. Connectivity configuration required for Flutter ↔ Django communication
+
+To allow Flutter to communicate with Django running on a local machine, several configurations must be set:
+
+10.0.2.2 in ALLOWED_HOSTS — Android emulators treat your computer as 10.0.2.2. If it is not allowed, Django blocks all incoming requests for security.
+
+Enable CORS — Browsers (including Flutter Web) block requests to different hosts unless CORS explicitly allows them. Without proper CORS rules, all API calls fail.
+
+SameSite and cookie settings — When using session-based authentication, cookies must be allowed to travel across different domains/ports. Incorrect SameSite settings will cause login cookies not to be saved.
+
+Android Internet permission (android.permission.INTERNET) — Without this, the Flutter app cannot make any network request at all.
+
+If any of these settings are missing, Flutter will not be able to connect, send requests, authenticate, or read Django’s responses. The app may show empty data, API errors, or fail to log in entirely.
+
+5. Data transmission mechanism (input → Django → Flutter)
+
+When the user enters input in Flutter (such as product name or description) and submits the form, the data is collected and sent as a JSON body through an HTTP request to Django. Django receives the request, validates the data, stores or processes it, and returns a JSON response. Flutter then parses this JSON using the Dart model and updates the UI accordingly. This cycle ensures that user-generated data flows safely from Flutter to Django and back into a structured, displayable format.
+
+6. Authentication mechanism (login/register/logout)
+
+For login, registration, and logout, Flutter sends user credentials (username, password, or registration data) through a CookieRequest POST request. Django’s authentication system checks the credentials:
+
+If correct, Django creates a session and sends back a session cookie.
+
+CookieRequest automatically stores this cookie, allowing Flutter to stay logged in.
+
+Whenever Flutter accesses a protected endpoint (e.g., fetching user products), the session cookie is automatically included, so Django knows which user is making the request. Logging out simply clears this cookie on both Django and Flutter sides. After successful login, Flutter navigates the user to the main menu, while logout redirects them back to the login screen.
+This mechanism ensures secure, persistent authentication across the entire app.
